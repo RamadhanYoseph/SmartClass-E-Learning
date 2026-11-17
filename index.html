@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SmartClass E-Learning</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <style>
+    body { font-family: system-ui, -apple-system, sans-serif; background: #f8fafc; }
+    .tab-active { background: #4f46e5; color: #fff; }
+    .loader-spin { border: 3px solid #e2e8f0; border-top: 3px solid #4f46e5; border-radius: 50%; width: 28px; height: 28px; animation: spin .8s linear infinite; }
+    @keyframes spin { 100% { transform: rotate(360deg); } }
+    .marquee-box { overflow: hidden; white-space: nowrap; }
+    .marquee-text { display: inline-block; padding-left: 100%; animation: marquee 20s linear infinite; }
+    @keyframes marquee { 0% { transform: translate(0,0); } 100% { transform: translate(-100%,0); } }
+  </style>
+</head>
+<body class="text-slate-800 min-h-screen flex flex-col">
+
+<div id="globalLoader" class="fixed inset-0 bg-slate-900/50 z-50 flex items-center justify-center hidden">
+  <div class="bg-white p-5 rounded-2xl shadow-xl flex flex-col items-center gap-2">
+    <div class="loader-spin"></div>
+    <p id="loaderText" class="text-sm font-semibold">Memuat...</p>
+  </div>
+</div>
+
+<header class="bg-white border-b sticky top-0 z-30 shadow-sm">
+  <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-indigo-600 text-white flex items-center justify-center"><i class="fa-solid fa-graduation-cap"></i></div>
+      <div>
+        <h1 id="hdrMapel" class="text-lg font-bold">SmartClass E-Learning</h1>
+        <p class="text-xs text-slate-500"><span id="hdrSekolah">Sekolah</span> &bull; <span id="hdrGuru">Guru</span></p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button onclick="openStudentProfileModal()" class="bg-slate-100 hover:bg-slate-200 px-3 py-2 rounded-xl text-xs font-bold"><i class="fa-solid fa-user-graduate text-indigo-600 mr-1"></i><span id="studentBadge">Atur Profil Siswa</span></button>
+      <button onclick="handleAdminButton()" class="bg-slate-900 hover:bg-slate-800 text-white px-3.5 py-2 rounded-xl text-xs font-bold"><i class="fa-solid fa-shield-halved text-amber-400 mr-1"></i><span id="btnAdminLabel">Admin Kontrol</span></button>
+    </div>
+  </div>
+  <div class="bg-indigo-600 text-white text-xs py-1.5 px-4 flex items-center gap-2">
+    <span class="bg-amber-400 text-slate-900 font-bold px-2 py-0.5 rounded text-[10px]">INFO</span>
+    <div class="marquee-box w-full"><span id="hdrPengumuman" class="marquee-text">Selamat datang!</span></div>
+  </div>
+</header>
+
+<!-- PORTAL SISWA -->
+<main id="studentPortal" class="max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-6">
+  <nav class="flex flex-wrap gap-2 bg-white p-2 rounded-2xl border shadow-sm">
+    <button onclick="switchTab('beranda')" data-tab="beranda" class="nav-tab tab-active flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-bold"><i class="fa-solid fa-house mr-1"></i>Beranda</button>
+    <button onclick="switchTab('materi')" data-tab="materi" class="nav-tab text-slate-600 flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-bold"><i class="fa-solid fa-book-open mr-1"></i>Materi</button>
+    <button onclick="switchTab('video')" data-tab="video" class="nav-tab text-slate-600 flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-bold"><i class="fa-brands fa-youtube mr-1"></i>Video</button>
+    <button onclick="switchTab('tugas')" data-tab="tugas" class="nav-tab text-slate-600 flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-bold"><i class="fa-solid fa-file-arrow-up mr-1"></i>Tugas</button>
+    <button onclick="switchTab('ujian')" data-tab="ujian" class="nav-tab text-slate-600 flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-bold"><i class="fa-solid fa-pen-to-square mr-1"></i>Kuis & Sumatif</button>
+    <button onclick="switchTab('nilai')" data-tab="nilai" class="nav-tab text-slate-600 flex-1 py-2 px-3 rounded-xl text-xs sm:text-sm font-bold"><i class="fa-solid fa-award mr-1"></i>Nilai Siswa</button>
+  </nav>
+
+  <!-- BERANDA -->
+  <section id="tab-beranda" class="tab-content space-y-5">
+    <div class="bg-gradient-to-r from-indigo-600 to-violet-700 rounded-3xl p-6 text-white flex flex-col md:flex-row justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-bold">Halo, <span id="welcomeName">Siswa Hebat</span>!</h2>
+        <p class="text-indigo-100 text-sm mt-1">Pelajari materi, tonton video, kumpulkan tugas, dan pantau nilai Anda.</p>
+      </div>
+      <div class="bg-white/15 p-4 rounded-2xl w-full md:w-64 text-xs">
+        <div class="flex justify-between font-bold mb-1"><span>Progres Materi</span><span id="progressPercent">0%</span></div>
+        <div class="w-full bg-white/20 rounded-full h-2 mb-2"><div id="progressBar" class="bg-amber-400 h-2 rounded-full" style="width:0%"></div></div>
+        <div class="flex justify-between"><span>Ulangan Sumatif:</span><span id="homeSumatifBadge" class="font-bold px-2 py-0.5 rounded bg-emerald-500">BUKA</span></div>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div onclick="switchTab('materi')" class="cursor-pointer bg-white p-4 rounded-2xl border shadow-sm"><div id="statMateri" class="text-2xl font-bold text-blue-600">0</div><div class="text-xs font-bold text-slate-500">Materi Ajar</div></div>
+      <div onclick="switchTab('video')" class="cursor-pointer bg-white p-4 rounded-2xl border shadow-sm"><div id="statVideo" class="text-2xl font-bold text-rose-600">0</div><div class="text-xs font-bold text-slate-500">Video YouTube</div></div>
+      <div onclick="switchTab('tugas')" class="cursor-pointer bg-white p-4 rounded-2xl border shadow-sm"><div id="statTugas" class="text-2xl font-bold text-amber-600">0</div><div class="text-xs font-bold text-slate-500">Tugas Aktif</div></div>
+      <div onclick="switchTab('ujian')" class="cursor-pointer bg-white p-4 rounded-2xl border shadow-sm"><div id="statSoal" class="text-2xl font-bold text-emerald-600">0</div><div class="text-xs font-bold text-slate-500">Bank Soal</div></div>
+    </div>
+  </section>
+
+  <!-- MATERI -->
+  <section id="tab-materi" class="tab-content hidden space-y-4">
+    <div class="flex flex-wrap justify-between gap-2">
+      <h2 class="text-xl font-bold">Pusat Materi Ajar</h2>
+      <input type="text" id="searchMateri" oninput="renderMaterials()" placeholder="Cari materi..." class="px-3 py-2 rounded-xl border text-sm">
+    </div>
+    <div id="materialsGrid" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+  </section>
+
+  <!-- VIDEO -->
+  <section id="tab-video" class="tab-content hidden grid grid-cols-1 lg:grid-cols-3 gap-5">
+    <div class="lg:col-span-2 space-y-3">
+      <div class="bg-black rounded-2xl overflow-hidden aspect-video"><iframe id="ytPlayer" class="w-full h-full" src="" frameborder="0" allowfullscreen></iframe></div>
+      <div class="bg-white p-4 rounded-2xl border">
+        <span id="vidTopik" class="text-xs font-bold text-indigo-600">Topik</span>
+        <h3 id="vidJudul" class="font-bold text-lg">Pilih Video</h3>
+        <p id="vidDeskripsi" class="text-xs text-slate-600 mt-1">-</p>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border space-y-2">
+        <div class="flex justify-between text-xs font-bold"><span>Catatan Belajar (Otomatis Tersimpan)</span><button onclick="downloadVideoNote()" class="text-indigo-600">Unduh .TXT</button></div>
+        <textarea id="videoNoteArea" oninput="saveVideoNote()" rows="3" class="w-full p-2 border rounded-xl text-sm" placeholder="Tulis catatan selama menonton..."></textarea>
+      </div>
+    </div>
+    <div class="bg-white p-4 rounded-2xl border space-y-2 max-h-[550px] overflow-y-auto">
+      <h4 class="font-bold text-sm border-b pb-2">Daftar Putar Video</h4>
+      <div id="videoPlaylist" class="space-y-2"></div>
+    </div>
+  </section>
+
+  <!-- TUGAS -->
+  <section id="tab-tugas" class="tab-content hidden space-y-5">
+    <h2 class="text-xl font-bold">Pengumpulan Tugas</h2>
+    <div id="assignmentsList" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    <div class="bg-white p-4 rounded-2xl border overflow-x-auto">
+      <h3 class="font-bold mb-2 text-sm">Riwayat Pengumpulan Saya</h3>
+      <table class="w-full text-xs text-left">
+        <thead class="bg-slate-100"><tr><th class="p-2">Tugas</th><th class="p-2">Waktu</th><th class="p-2">File</th><th class="p-2">Nilai</th><th class="p-2">Feedback</th></tr></thead>
+        <tbody id="studentSubmissionsTable" class="divide-y"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- KUIS & SUMATIF -->
+  <section id="tab-ujian" class="tab-content hidden space-y-5">
+    <div id="examSelector" class="grid grid-cols-1 md:grid-cols-2 gap-5">
+      <div class="bg-white p-6 rounded-2xl border-t-4 border-t-emerald-500 space-y-3">
+        <h3 class="text-lg font-bold">Kuis Interaktif (Latihan)</h3>
+        <p class="text-xs text-slate-600">Koreksi langsung + pembahasan soal.</p>
+        <button onclick="startKuis()" class="w-full py-2.5 bg-emerald-600 text-white font-bold rounded-xl text-sm">Mulai Kuis</button>
+      </div>
+      <div class="bg-white p-6 rounded-2xl border-t-4 border-t-indigo-600 space-y-3">
+        <div class="flex justify-between"><h3 class="text-lg font-bold">Ulangan Sumatif</h3><span id="sumatifStatusPill" class="text-xs font-bold px-2 py-0.5 rounded bg-emerald-500 text-white">BUKA</span></div>
+        <input type="text" id="inputTokenSumatif" placeholder="Masukkan Token Ujian..." class="w-full p-2.5 border rounded-xl text-sm uppercase">
+        <button onclick="startSumatif()" class="w-full py-2.5 bg-indigo-600 text-white font-bold rounded-xl text-sm">Mulai Ulangan Sumatif</button>
+      </div>
+    </div>
+    <div id="examArena" class="hidden bg-white p-5 rounded-2xl border space-y-4">
+      <div class="flex justify-between items-center border-b pb-3">
+        <span id="arenaModeBadge" class="font-bold text-indigo-700 text-sm">Ujian</span>
+        <div class="flex gap-2 items-center">
+          <span id="antiCheatBadge" class="hidden text-xs bg-rose-100 text-rose-700 px-2 py-1 rounded font-bold">Pindah Tab: <span id="tabSwitchCount">0</span>x</span>
+          <span id="timerBox" class="hidden bg-slate-900 text-white px-3 py-1 rounded font-mono text-sm"><span id="timerDisplay">00:00</span></span>
+        </div>
+      </div>
+      <div id="questionsContainer" class="space-y-4"></div>
+      <div class="flex justify-end gap-2 pt-3 border-t">
+        <button onclick="cancelExam()" class="px-4 py-2 border rounded-xl text-xs font-bold">Batal</button>
+        <button onclick="finishExam()" class="px-5 py-2 bg-indigo-600 text-white rounded-xl text-xs font-bold">Kirim Jawaban</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- NILAI SISWA -->
+  <section id="tab-nilai" class="tab-content hidden space-y-5">
+    <div class="flex justify-between items-center">
+      <h2 class="text-xl font-bold">Rapor & Nilai Siswa</h2>
+      <div class="flex gap-2">
+        <button onclick="loadStudentHistory()" class="px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-xl text-xs font-bold">Segarkan</button>
+        <button onclick="window.print()" class="px-3 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-bold">Cetak PDF</button>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div class="bg-white p-4 rounded-2xl border-l-4 border-l-amber-500"><div class="text-xs text-slate-500 font-bold">Rata-Rata Tugas</div><div id="avgNilaiTugas" class="text-2xl font-bold">-</div></div>
+      <div class="bg-white p-4 rounded-2xl border-l-4 border-l-indigo-600"><div class="text-xs text-slate-500 font-bold">Rata-Rata Kuis/Sumatif</div><div id="avgNilaiUjian" class="text-2xl font-bold">-</div></div>
+      <div class="bg-white p-4 rounded-2xl border-l-4 border-l-emerald-500"><div class="text-xs text-slate-500 font-bold">Predikat</div><div id="predikatSiswa" class="text-2xl font-bold text-emerald-600">-</div></div>
+    </div>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="bg-white p-4 rounded-2xl border overflow-x-auto"><h4 class="font-bold text-sm mb-2">Nilai Tugas</h4><table class="w-full text-xs text-left"><thead class="bg-slate-100"><tr><th class="p-2">Tugas</th><th class="p-2">Nilai</th><th class="p-2">Catatan</th></tr></thead><tbody id="nilaiTugasDetailTable" class="divide-y"></tbody></table></div>
+      <div class="bg-white p-4 rounded-2xl border overflow-x-auto"><h4 class="font-bold text-sm mb-2">Nilai Kuis & Sumatif</h4><table class="w-full text-xs text-left"><thead class="bg-slate-100"><tr><th class="p-2">Mode</th><th class="p-2">Skor</th><th class="p-2">Benar</th><th class="p-2">Waktu</th></tr></thead><tbody id="nilaiUjianDetailTable" class="divide-y"></tbody></table></div>
+    </div>
+  </section>
+</main>
+
+<!-- LAMAN ADMIN KONTROL -->
+<main id="adminPortal" class="hidden max-w-7xl mx-auto w-full px-4 py-6 flex-1 space-y-5">
+  <div class="bg-slate-900 text-white rounded-2xl p-5 flex flex-wrap justify-between items-center gap-3">
+    <div><h2 class="text-xl font-bold">Panel Admin & Kontrol Guru</h2><p class="text-xs text-slate-300">Kelola sistem, materi, video, tugas, soal, dan nilai.</p></div>
+    <div class="flex flex-wrap gap-2 text-xs">
+      <a id="linkSpreadsheet" href="#" target="_blank" class="bg-emerald-600 px-3 py-2 rounded-xl font-bold">Buka Sheets</a>
+      <a id="linkDriveFolder" href="#" target="_blank" class="bg-blue-600 px-3 py-2 rounded-xl font-bold">Folder Drive</a>
+      <button onclick="refreshAdminData()" class="bg-slate-700 px-3 py-2 rounded-xl font-bold">Segarkan</button>
+    </div>
+  </div>
+  <nav class="flex flex-wrap gap-2 bg-white p-2 rounded-2xl border text-xs font-bold">
+    <button onclick="switchAdminTab('kontrol')" data-admintab="kontrol" class="admin-tab tab-active px-3 py-2 rounded-xl">Kontrol Sistem</button>
+    <button onclick="switchAdminTab('materivideo')" data-admintab="materivideo" class="admin-tab text-slate-600 px-3 py-2 rounded-xl">Materi & Video</button>
+    <button onclick="switchAdminTab('tugasnilai')" data-admintab="tugasnilai" class="admin-tab text-slate-600 px-3 py-2 rounded-xl">Tugas & Penilaian</button>
+    <button onclick="switchAdminTab('banksoal')" data-admintab="banksoal" class="admin-tab text-slate-600 px-3 py-2 rounded-xl">Bank Soal</button>
+    <button onclick="switchAdminTab('rekap')" data-admintab="rekap" class="admin-tab text-slate-600 px-3 py-2 rounded-xl">Rekap & Ekspor CSV</button>
+  </nav>
+
+  <section id="admintab-kontrol" class="admin-content grid grid-cols-1 md:grid-cols-2 gap-4 bg-white p-5 rounded-2xl border text-sm">
+    <div class="space-y-3">
+      <h3 class="font-bold">Kontrol Ulangan Sumatif</h3>
+      <select id="admStatusSumatif" class="w-full p-2 border rounded-xl"><option value="BUKA">BUKA</option><option value="TUTUP">TUTUP</option></select>
+      <input id="admTokenSumatif" placeholder="Token Ujian" class="w-full p-2 border rounded-xl uppercase">
+      <input id="admDurasiSumatif" type="number" placeholder="Durasi (menit)" class="w-full p-2 border rounded-xl">
+      <select id="admAcakSoal" class="w-full p-2 border rounded-xl"><option value="YA">Acak Soal: YA</option><option value="TIDAK">Acak Soal: TIDAK</option></select>
+    </div>
+    <div class="space-y-3">
+      <h3 class="font-bold">Identitas & Keamanan</h3>
+      <input id="admSekolah" placeholder="Nama Sekolah" class="w-full p-2 border rounded-xl">
+      <input id="admMapel" placeholder="Mata Pelajaran" class="w-full p-2 border rounded-xl">
+      <input id="admGuru" placeholder="Nama Guru" class="w-full p-2 border rounded-xl">
+      <input id="admPin" placeholder="PIN Admin Baru" class="w-full p-2 border rounded-xl">
+      <input id="admPengumuman" placeholder="Pengumuman Berjalan" class="w-full p-2 border rounded-xl">
+      <button onclick="saveAdminSettings()" class="w-full py-2.5 bg-indigo-600 text-white font-bold rounded-xl">Simpan Pengaturan</button>
+    </div>
+  </section>
+
+  <section id="admintab-materivideo" class="admin-content hidden space-y-4">
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="bg-white p-4 rounded-2xl border space-y-2 text-sm">
+        <h3 class="font-bold">Tambah Materi</h3>
+        <input id="matJudul" placeholder="Judul" class="w-full p-2 border rounded-xl">
+        <input id="matKategori" placeholder="Bab / Kategori" class="w-full p-2 border rounded-xl">
+        <select id="matTipe" class="w-full p-2 border rounded-xl"><option>PDF / Dokumen</option><option>Slide Presentasi</option><option>Tautan Web</option></select>
+        <input id="matLink" placeholder="Link Drive / PDF" class="w-full p-2 border rounded-xl">
+        <textarea id="matDesk" placeholder="Deskripsi" class="w-full p-2 border rounded-xl"></textarea>
+        <button onclick="addMaterial()" class="w-full py-2 bg-blue-600 text-white font-bold rounded-xl">Simpan Materi</button>
+      </div>
+      <div class="bg-white p-4 rounded-2xl border space-y-2 text-sm">
+        <h3 class="font-bold">Tambah Video YouTube</h3>
+        <input id="vidAddJudul" placeholder="Judul Video" class="w-full p-2 border rounded-xl">
+        <input id="vidAddTopik" placeholder="Topik" class="w-full p-2 border rounded-xl">
+        <input id="vidAddDurasi" placeholder="Durasi" class="w-full p-2 border rounded-xl">
+        <input id="vidAddUrl" placeholder="Link YouTube" class="w-full p-2 border rounded-xl">
+        <textarea id="vidAddDesk" placeholder="Deskripsi" class="w-full p-2 border rounded-xl"></textarea>
+        <button onclick="addVideo()" class="w-full py-2 bg-rose-600 text-white font-bold rounded-xl">Simpan Video</button>
+      </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div id="admMaterialsList" class="bg-white p-4 rounded-2xl border space-y-2"></div>
+      <div id="admVideosList" class="bg-white p-4 rounded-2xl border space-y-2"></div>
+    </div>
+  </section>
+
+  <section id="admintab-tugasnilai" class="admin-content hidden space-y-4">
+    <div class="bg-white p-4 rounded-2xl border space-y-2 text-sm">
+      <h3 class="font-bold">Buat Tugas Baru</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
+        <input id="tgsJudul" placeholder="Judul Tugas" class="p-2 border rounded-xl md:col-span-2">
+        <input id="tgsDeadline" type="date" class="p-2 border rounded-xl">
+      </div>
+      <textarea id="tgsDesk" placeholder="Instruksi tugas..." class="w-full p-2 border rounded-xl"></textarea>
+      <button onclick="addAssignment()" class="px-5 py-2 bg-amber-600 text-white font-bold rounded-xl">Terbitkan Tugas</button>
+    </div>
+    <div class="bg-white p-4 rounded-2xl border overflow-x-auto">
+      <table class="w-full text-xs text-left"><thead class="bg-slate-100"><tr><th class="p-2">Siswa</th><th class="p-2">Tugas</th><th class="p-2">File</th><th class="p-2">Nilai</th><th class="p-2">Aksi</th></tr></thead><tbody id="admSubmissionsTable" class="divide-y"></tbody></table>
+    </div>
+  </section>
+
+  <section id="admintab-banksoal" class="admin-content hidden space-y-4">
+    <div class="bg-white p-4 rounded-2xl border space-y-2 text-sm">
+      <h3 class="font-bold">Tambah Soal PG</h3>
+      <div class="grid grid-cols-3 gap-2">
+        <select id="soalMode" class="p-2 border rounded-xl"><option value="Kuis">Kuis</option><option value="Sumatif">Sumatif</option></select>
+        <input id="soalTopik" placeholder="Topik" class="p-2 border rounded-xl">
+        <select id="soalKunci" class="p-2 border rounded-xl"><option value="A">Kunci: A</option><option value="B">Kunci: B</option><option value="C">Kunci: C</option><option value="D">Kunci: D</option></select>
+      </div>
+      <textarea id="soalTanya" placeholder="Pertanyaan..." class="w-full p-2 border rounded-xl"></textarea>
+      <div class="grid grid-cols-2 gap-2">
+        <input id="soalA" placeholder="Opsi A" class="p-2 border rounded-xl"><input id="soalB" placeholder="Opsi B" class="p-2 border rounded-xl">
+        <input id="soalC" placeholder="Opsi C" class="p-2 border rounded-xl"><input id="soalD" placeholder="Opsi D" class="p-2 border rounded-xl">
+      </div>
+      <input id="soalBahasan" placeholder="Pembahasan (untuk Kuis)" class="w-full p-2 border rounded-xl">
+      <button onclick="addQuestion()" class="px-5 py-2 bg-indigo-600 text-white font-bold rounded-xl">Simpan Soal</button>
+    </div>
+    <div id="admQuestionsList" class="bg-white p-4 rounded-2xl border space-y-2"></div>
+  </section>
+
+  <section id="admintab-rekap" class="admin-content hidden bg-white p-4 rounded-2xl border space-y-3">
+    <div class="flex justify-between items-center"><h3 class="font-bold">Rekap Nilai Ujian</h3><button onclick="exportScoresCSV()" class="px-3 py-1.5 bg-emerald-600 text-white rounded-xl text-xs font-bold">Unduh CSV</button></div>
+    <div class="overflow-x-auto"><table class="w-full text-xs text-left"><thead class="bg-slate-100"><tr><th class="p-2">Nama</th><th class="p-2">Kelas</th><th class="p-2">Mode</th><th class="p-2">Skor</th><th class="p-2">Benar</th><th class="p-2">Pindah Tab</th><th class="p-2">Waktu</th></tr></thead><tbody id="admScoresTable" class="divide-y"></tbody></table></div>
+  </section>
+</main>
+
+<script>
+let appData = { settings:{}, materials:[], videos:[], assignments:[], kuisQuestions:[], sumatifQuestions:[] };
+let adminData = null, adminPinSession = '', isAdminView = false;
+let studentProfile = JSON.parse(localStorage.getItem('sc_student_profile') || 'null');
+let completedMaterials = JSON.parse(localStorage.getItem('sc_completed_materials') || '[]');
+let currentVideoId = null, activeExamMode = null, activeExamQuestions = [], activeExamToken = '', examTimerInterval = null, tabSwitchCounter = 0;
+
+window.onload = () => { updateStudentBadge(); loadInitialData(); document.addEventListener('visibilitychange', handleVisibilityChange); };
+const showLoader = (t='Memproses...') => { document.getElementById('loaderText').innerText=t; document.getElementById('globalLoader').classList.remove('hidden'); };
+const hideLoader = () => document.getElementById('globalLoader').classList.add('hidden');
+const onErr = err => { hideLoader(); Swal.fire('Error', err.message || String(err), 'error'); };
+const esc = s => String(s||'').replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+function loadInitialData() {
+  showLoader('Memuat ruang belajar...');
+  google.script.run.withSuccessHandler(res => {
+    appData = res; renderHeader(); renderMaterials(); renderVideos(); renderAssignments();
+    if (studentProfile) loadStudentHistory();
+    hideLoader();
+  }).withFailureHandler(onErr).getInitialData();
+}
+
+function renderHeader() {
+  const s = appData.settings || {};
+  document.getElementById('hdrMapel').innerText = s.nama_mapel || 'SmartClass E-Learning';
+  document.getElementById('hdrSekolah').innerText = s.nama_sekolah || 'Sekolah';
+  document.getElementById('hdrGuru').innerText = s.nama_guru || 'Guru';
+  document.getElementById('hdrPengumuman').innerText = s.pengumuman || 'Selamat belajar!';
+  document.getElementById('statMateri').innerText = appData.materials.length;
+  document.getElementById('statVideo').innerText = appData.videos.length;
+  document.getElementById('statTugas').innerText = appData.assignments.length;
+  document.getElementById('statSoal').innerText = appData.kuisQuestions.length + appData.sumatifQuestions.length;
+  const st = s.status_sumatif || 'BUKA';
+  ['homeSumatifBadge','sumatifStatusPill'].forEach(id => {
+    const el = document.getElementById(id); el.innerText = st;
+    el.className = 'text-xs font-bold px-2 py-0.5 rounded text-white ' + (st==='BUKA'?'bg-emerald-500':'bg-rose-500');
+  });
+  updateProgressBar();
+}
+
+function updateProgressBar() {
+  const tot = appData.materials.length;
+  const done = completedMaterials.filter(id => appData.materials.some(m => m.ID === id)).length;
+  const pct = tot > 0 ? Math.round((done/tot)*100) : 0;
+  document.getElementById('progressPercent').innerText = pct + '%';
+  document.getElementById('progressBar').style.width = pct + '%';
+}
+
+function switchTab(t) {
+  document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+  document.getElementById('tab-'+t).classList.remove('hidden');
+  document.querySelectorAll('.nav-tab').forEach(b => { b.classList.remove('tab-active'); b.classList.add('text-slate-600'); });
+  const a = document.querySelector(`.nav-tab[data-tab="${t}"]`);
+  if (a) { a.classList.add('tab-active'); a.classList.remove('text-slate-600'); }
+}
+
+function updateStudentBadge() {
+  document.getElementById('studentBadge').innerText = studentProfile ? `${studentProfile.nama} (${studentProfile.kelas})` : 'Atur Profil Siswa';
+  document.getElementById('welcomeName').innerText = studentProfile ? studentProfile.nama : 'Siswa Hebat';
+}
+
+async function openStudentProfileModal() {
+  const { value: v } = await Swal.fire({
+    title: 'Profil Siswa',
+    html: `<input id="sn" class="swal2-input" placeholder="Nama Lengkap" value="${studentProfile?esc(studentProfile.nama):''}"><input id="sk" class="swal2-input" placeholder="Kelas" value="${studentProfile?esc(studentProfile.kelas):''}">`,
+    preConfirm: () => {
+      const nama = document.getElementById('sn').value.trim(), kelas = document.getElementById('sk').value.trim();
+      if (!nama || !kelas) { Swal.showValidationMessage('Wajib diisi!'); return false; }
+      return { nama, kelas };
+    }
+  });
+  if (v) { studentProfile = v; localStorage.setItem('sc_student_profile', JSON.stringify(v)); updateStudentBadge(); loadStudentHistory(); }
+}
+
+function ensureProfile(cb) {
+  if (studentProfile && studentProfile.nama) cb();
+  else openStudentProfileModal().then(() => { if (studentProfile) cb(); });
+}
+
+function loadStudentHistory() {
+  if (!studentProfile) return;
+  google.script.run.withSuccessHandler(res => {
+    document.getElementById('studentSubmissionsTable').innerHTML = res.submissions.length ? res.submissions.map(s => `<tr><td class="p-2 font-bold">${esc(s.JudulTugas)}</td><td class="p-2">${esc(s.WaktuKumpul)}</td><td class="p-2"><a href="${esc(s.FileURL)}" target="_blank" class="text-indigo-600 font-bold">Lihat</a></td><td class="p-2 font-bold">${esc(s.Nilai)}</td><td class="p-2">${esc(s.FeedbackGuru)}</td></tr>`).join('') : '<tr><td colspan="5" class="p-3 text-center text-slate-400">Belum ada tugas.</td></tr>';
+    const gs = res.submissions.filter(s => !isNaN(parseFloat(s.Nilai)));
+    const avgT = gs.length ? Math.round(gs.reduce((a,b)=>a+parseFloat(b.Nilai),0)/gs.length) : null;
+    const avgU = res.scores.length ? Math.round(res.scores.reduce((a,b)=>a+parseFloat(b.Skor||0),0)/res.scores.length) : null;
+    document.getElementById('avgNilaiTugas').innerText = avgT ?? '-';
+    document.getElementById('avgNilaiUjian').innerText = avgU ?? '-';
+    const ov = (avgT!==null && avgU!==null) ? (avgT+avgU)/2 : (avgT ?? avgU);
+    document.getElementById('predikatSiswa').innerText = ov===null ? '-' : ov>=90?'A (Sangat Baik)':ov>=80?'B (Baik)':ov>=70?'C (Cukup)':'D (Bimbingan)';
+    document.getElementById('nilaiTugasDetailTable').innerHTML = res.submissions.map(s=>`<tr><td class="p-2">${esc(s.JudulTugas)}</td><td class="p-2 font-bold">${esc(s.Nilai)}</td><td class="p-2">${esc(s.FeedbackGuru)}</td></tr>`).join('') || '<tr><td colspan="3" class="p-3 text-center text-slate-400">Kosong</td></tr>';
+    document.getElementById('nilaiUjianDetailTable').innerHTML = res.scores.map(sc=>`<tr><td class="p-2 font-bold">${esc(sc.Mode)}</td><td class="p-2 font-bold text-indigo-700">${esc(sc.Skor)}</td><td class="p-2">${esc(sc.Benar)}/${esc(sc.TotalSoal)}</td><td class="p-2">${esc(sc.WaktuSelesai)}</td></tr>`).join('') || '<tr><td colspan="4" class="p-3 text-center text-slate-400">Kosong</td></tr>';
+  }).getStudentHistory(studentProfile.nama);
+}
+
+function renderMaterials() {
+  const q = (document.getElementById('searchMateri').value||'').toLowerCase();
+  const list = appData.materials.filter(m => m.Judul.toLowerCase().includes(q) || m.Kategori.toLowerCase().includes(q));
+  document.getElementById('materialsGrid').innerHTML = list.map(m => {
+    const done = completedMaterials.includes(m.ID);
+    return `<div class="bg-white p-4 rounded-2xl border flex flex-col justify-between space-y-3"><div><span class="text-[11px] font-bold bg-blue-50 text-blue-700 px-2 py-0.5 rounded">${esc(m.Kategori)}</span><h3 class="font-bold mt-2">${esc(m.Judul)}</h3><p class="text-xs text-slate-600 mt-1">${esc(m.Deskripsi)}</p></div><div class="flex gap-2"><a href="${esc(m.Link)}" target="_blank" class="flex-1 text-center py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl">Buka</a><button onclick="toggleMaterialDone('${m.ID}')" class="px-3 py-2 rounded-xl text-xs font-bold border ${done?'bg-emerald-50 text-emerald-700':'text-slate-500'}">${done?'Selesai':'Tandai'}</button></div></div>`;
+  }).join('') || '<p class="text-slate-400 text-sm">Tidak ada materi.</p>';
+}
+
+function toggleMaterialDone(id) {
+  completedMaterials = completedMaterials.includes(id) ? completedMaterials.filter(x=>x!==id) : [...completedMaterials, id];
+  localStorage.setItem('sc_completed_materials', JSON.stringify(completedMaterials));
+  renderMaterials(); updateProgressBar();
+}
+
+function extractYtId(url) { const m = (url||'').match(/^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/); return (m && m[2].length===11)?m[2]:null; }
+function renderVideos() {
+  document.getElementById('videoPlaylist').innerHTML = appData.videos.map((v,i)=>`<div onclick="playVideo(${i})" class="cursor-pointer p-2.5 rounded-xl border hover:bg-indigo-50 text-xs"><div class="font-bold">${esc(v.Judul)}</div><div class="text-slate-500">${esc(v.Topik)} &bull; ${esc(v.Durasi)}</div></div>`).join('');
+  if (!currentVideoId && appData.videos.length) playVideo(0);
+}
+function playVideo(i) {
+  const v = appData.videos[i]; if (!v) return; currentVideoId = v.ID;
+  const id = extractYtId(v.YoutubeURL);
+  document.getElementById('ytPlayer').src = id ? `https://www.youtube.com/embed/${id}?rel=0` : '';
+  document.getElementById('vidTopik').innerText = v.Topik; document.getElementById('vidJudul').innerText = v.Judul; document.getElementById('vidDeskripsi').innerText = v.Deskripsi;
+  document.getElementById('videoNoteArea').value = localStorage.getItem('sc_note_'+v.ID) || '';
+}
+function saveVideoNote() { if (currentVideoId) localStorage.setItem('sc_note_'+currentVideoId, document.getElementById('videoNoteArea').value); }
+function downloadVideoNote() {
+  const t = document.getElementById('videoNoteArea').value; if (!t.trim()) return;
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([t],{type:'text/plain'})); a.download='Catatan_Video.txt'; a.click();
+}
+
+function renderAssignments() {
+  document.getElementById('assignmentsList').innerHTML = appData.assignments.map(a => `<div class="bg-white p-4 rounded-2xl border flex flex-col justify-between space-y-3"><div><span class="text-[11px] bg-amber-100 text-amber-800 font-bold px-2 py-0.5 rounded">Deadline: ${esc(a.Deadline)}</span><h3 class="font-bold mt-2">${esc(a.Judul)}</h3><p class="text-xs text-slate-600 mt-1">${esc(a.Deskripsi)}</p></div><button onclick="openSubmitModal('${a.ID}','${esc(a.Judul).replace(/'/g,"\\'")}')" class="w-full py-2 bg-indigo-600 text-white text-xs font-bold rounded-xl">Kumpulkan Tugas</button></div>`).join('');
+}
+
+function openSubmitModal(tugasId, judulTugas) {
+  ensureProfile(async () => {
+    const { value: f } = await Swal.fire({
+      title: 'Kumpul Tugas',
+      html: `<input type="file" id="sf" class="w-full text-xs border p-2 rounded mb-2"><input type="url" id="sl" placeholder="Atau Link Drive/Canva" class="w-full p-2 border rounded text-sm mb-2"><input id="sc" placeholder="Catatan" class="w-full p-2 border rounded text-sm">`,
+      showCancelButton: true,
+      preConfirm: () => {
+        const file = document.getElementById('sf').files[0], linkUrl = document.getElementById('sl').value.trim(), catatan = document.getElementById('sc').value.trim();
+        if (!file && !linkUrl) { Swal.showValidationMessage('Pilih file atau link!'); return false; }
+        if (file && file.size > 10*1024*1024) { Swal.showValidationMessage('Maks 10MB!'); return false; }
+        return { file, linkUrl, catatan };
+      }
+    });
+    if (f) {
+      showLoader('Mengunggah...');
+      const send = (fileData, fileName, mimeType) => google.script.run.withSuccessHandler(()=>{ hideLoader(); Swal.fire('Terkirim!','','success'); loadStudentHistory(); }).withFailureHandler(onErr).submitAssignment({ tugasId, judulTugas, namaSiswa: studentProfile.nama, kelas: studentProfile.kelas, linkUrl: f.linkUrl, catatan: f.catatan, fileData, fileName, mimeType });
+      if (f.file) { const r = new FileReader(); r.onload = e => send(e.target.result, f.file.name, f.file.type); r.readAsDataURL(f.file); } else send(null,null,null);
+    }
+  });
+}
+
+function startKuis() {
+  ensureProfile(() => {
+    if (!appData.kuisQuestions.length) return Swal.fire('Kosong','Belum ada soal kuis.','info');
+    activeExamMode = 'Kuis'; activeExamQuestions = [...appData.kuisQuestions];
+    if (appData.settings.acak_soal === 'YA') activeExamQuestions.sort(()=>Math.random()-0.5);
+    launchExam(null);
+  });
+}
+function startSumatif() {
+  ensureProfile(() => {
+    const tok = document.getElementById('inputTokenSumatif').value.trim();
+    if (!tok) return Swal.fire('Token Kosong','Masukkan token!','warning');
+    showLoader('Cek token...');
+    google.script.run.withSuccessHandler(r => {
+      hideLoader(); if (!r.valid) return Swal.fire('Ditolak', r.message, 'error');
+      activeExamMode = 'Sumatif'; activeExamToken = tok; activeExamQuestions = [...appData.sumatifQuestions];
+      if (appData.settings.acak_soal === 'YA') activeExamQuestions.sort(()=>Math.random()-0.5);
+      launchExam(r.durasi);
+    }).withFailureHandler(onErr).verifySumatifToken(tok);
+  });
+}
+function launchExam(durasi) {
+  tabSwitchCounter = 0; document.getElementById('tabSwitchCount').innerText = '0';
+  document.getElementById('examSelector').classList.add('hidden'); document.getElementById('examArena').classList.remove('hidden');
+  document.getElementById('arenaModeBadge').innerText = activeExamMode;
+  document.getElementById('questionsContainer').innerHTML = activeExamQuestions.map((q,i)=>`<div class="p-3 bg-slate-50 rounded-xl border space-y-2"><p class="font-bold text-sm">${i+1}. ${esc(q.Pertanyaan)}</p><div class="grid grid-cols-1 sm:grid-cols-2 gap-2">${['A','B','C','D'].map(o=>`<label class="flex gap-2 p-2 bg-white border rounded-lg text-xs cursor-pointer"><input type="radio" name="ans-${q.ID}" value="${o}" onchange="onSelectAns('${q.ID}','${o}')"><span><b>${o}.</b> ${esc(q['Opsi'+o])}</span></label>`).join('')}</div><div id="fb-${q.ID}" class="hidden text-xs p-2 rounded"></div></div>`).join('');
+  if (activeExamMode==='Sumatif' && durasi) {
+    document.getElementById('timerBox').classList.remove('hidden'); document.getElementById('antiCheatBadge').classList.remove('hidden');
+    let sec = durasi*60; clearInterval(examTimerInterval);
+    examTimerInterval = setInterval(()=>{ sec--; document.getElementById('timerDisplay').innerText=`${String(Math.floor(sec/60)).padStart(2,'0')}:${String(sec%60).padStart(2,'0')}`; if(sec<=0){clearInterval(examTimerInterval); finishExam(true);} }, 1000);
+  } else { document.getElementById('timerBox').classList.add('hidden'); document.getElementById('antiCheatBadge').classList.add('hidden'); }
+}
+function onSelectAns(qId, opt) {
+  if (activeExamMode !== 'Kuis') return;
+  const q = activeExamQuestions.find(x=>x.ID===qId); const fb = document.getElementById('fb-'+qId);
+  fb.classList.remove('hidden','bg-emerald-100','bg-rose-100');
+  if (opt === q.Kunci.toUpperCase()) { fb.classList.add('bg-emerald-100'); fb.innerText = 'Benar! ' + q.Pembahasan; }
+  else { fb.classList.add('bg-rose-100'); fb.innerText = `Salah. Kunci: ${q.Kunci}. ${q.Pembahasan}`; }
+}
+function handleVisibilityChange() { if (document.hidden && activeExamMode==='Sumatif') { tabSwitchCounter++; document.getElementById('tabSwitchCount').innerText=tabSwitchCounter; Swal.fire('Peringatan!','Jangan meninggalkan halaman ujian!','warning'); } }
+function cancelExam() { clearInterval(examTimerInterval); activeExamMode=null; document.getElementById('examArena').classList.add('hidden'); document.getElementById('examSelector').classList.remove('hidden'); }
+function finishExam(force=false) {
+  const answers = {}; activeExamQuestions.forEach(q=>{ const c=document.querySelector(`input[name="ans-${q.ID}"]:checked`); if(c) answers[q.ID]=c.value; });
+  const go = () => { clearInterval(examTimerInterval); showLoader('Menilai...'); google.script.run.withSuccessHandler(r=>{ hideLoader(); cancelExam(); Swal.fire('Selesai!',`Skor: ${r.skor} (${r.benar}/${r.total})`,'success'); loadStudentHistory(); }).withFailureHandler(onErr).submitExam({ mode:activeExamMode, token:activeExamToken, namaSiswa:studentProfile.nama, kelas:studentProfile.kelas, answers, pelanggaranTab:tabSwitchCounter }); };
+  if (force) return go();
+  Swal.fire({title:'Kirim Jawaban?',showCancelButton:true}).then(r=>{ if(r.isConfirmed) go(); });
+}
+
+// === ADMIN ===
+function handleAdminButton() {
+  if (isAdminView) { isAdminView=false; document.getElementById('adminPortal').classList.add('hidden'); document.getElementById('studentPortal').classList.remove('hidden'); document.getElementById('btnAdminLabel').innerText='Admin Kontrol'; loadInitialData(); return; }
+  Swal.fire({ title:'Login Admin', input:'password', inputPlaceholder:'PIN (default: admin123)', showCancelButton:true }).then(r=>{
+    if (r.isConfirmed && r.value) {
+      showLoader('Verifikasi...');
+      google.script.run.withSuccessHandler(d=>{ hideLoader(); adminPinSession=r.value; adminData=d; isAdminView=true; document.getElementById('studentPortal').classList.add('hidden'); document.getElementById('adminPortal').classList.remove('hidden'); document.getElementById('btnAdminLabel').innerText='Portal Siswa'; renderAdmin(); }).withFailureHandler(onErr).adminLogin(r.value);
+    }
+  });
+}
+function refreshAdminData() { showLoader(); google.script.run.withSuccessHandler(d=>{ adminData=d; renderAdmin(); hideLoader(); }).withFailureHandler(onErr).getAdminDashboardData(adminPinSession); }
+function switchAdminTab(t) {
+  document.querySelectorAll('.admin-content').forEach(e=>e.classList.add('hidden')); document.getElementById('admintab-'+t).classList.remove('hidden');
+  document.querySelectorAll('.admin-tab').forEach(b=>{ b.classList.remove('tab-active'); b.classList.add('text-slate-600'); });
+  const a=document.querySelector(`.admin-tab[data-admintab="${t}"]`); if(a){ a.classList.add('tab-active'); a.classList.remove('text-slate-600'); }
+}
+function renderAdmin() {
+  const s = adminData.settings;
+  document.getElementById('linkSpreadsheet').href = adminData.spreadsheetUrl; document.getElementById('linkDriveFolder').href = adminData.folderUrl;
+  document.getElementById('admStatusSumatif').value=s.status_sumatif||'BUKA'; document.getElementById('admTokenSumatif').value=s.token_sumatif||'';
+  document.getElementById('admDurasiSumatif').value=s.durasi_sumatif||'30'; document.getElementById('admAcakSoal').value=s.acak_soal||'YA';
+  document.getElementById('admSekolah').value=s.nama_sekolah||''; document.getElementById('admMapel').value=s.nama_mapel||'';
+  document.getElementById('admGuru').value=s.nama_guru||''; document.getElementById('admPin').value=s.admin_pin||''; document.getElementById('admPengumuman').value=s.pengumuman||'';
+  document.getElementById('admMaterialsList').innerHTML = adminData.materials.map(m=>`<div class="flex justify-between text-xs p-2 bg-slate-50 rounded"><span>${esc(m.Judul)}</span><button onclick="delRow('MATERIALS','${m.ID}')" class="text-rose-600 font-bold">Hapus</button></div>`).join('');
+  document.getElementById('admVideosList').innerHTML = adminData.videos.map(v=>`<div class="flex justify-between text-xs p-2 bg-slate-50 rounded"><span>${esc(v.Judul)}</span><button onclick="delRow('VIDEOS','${v.ID}')" class="text-rose-600 font-bold">Hapus</button></div>`).join('');
+  document.getElementById('admSubmissionsTable').innerHTML = adminData.submissions.map(x=>`<tr><td class="p-2"><b>${esc(x.NamaSiswa)}</b> (${esc(x.Kelas)})</td><td class="p-2">${esc(x.JudulTugas)}</td><td class="p-2"><a href="${esc(x.FileURL)}" target="_blank" class="text-indigo-600 font-bold">Buka</a></td><td class="p-2">${esc(x.Nilai)}</td><td class="p-2"><button onclick="gradeSub('${x.ID}')" class="px-2 py-1 bg-indigo-600 text-white rounded">Nilai</button></td></tr>`).join('');
+  document.getElementById('admQuestionsList').innerHTML = adminData.questions.map(q=>`<div class="flex justify-between text-xs p-2 bg-slate-50 rounded"><span><b>[${esc(q.Mode)}]</b> ${esc(q.Pertanyaan)} (Kunci: ${esc(q.Kunci)})</span><button onclick="delRow('QUESTIONS','${q.ID}')" class="text-rose-600 font-bold">Hapus</button></div>`).join('');
+  document.getElementById('admScoresTable').innerHTML = adminData.scores.map(x=>`<tr><td class="p-2 font-bold">${esc(x.NamaSiswa)}</td><td class="p-2">${esc(x.Kelas)}</td><td class="p-2">${esc(x.Mode)}</td><td class="p-2 font-bold">${esc(x.Skor)}</td><td class="p-2">${esc(x.Benar)}/${esc(x.TotalSoal)}</td><td class="p-2 text-rose-600">${esc(x.PelanggaranTab)}</td><td class="p-2">${esc(x.WaktuSelesai)}</td></tr>`).join('');
+}
+function saveAdminSettings() {
+  const p = { status_sumatif:document.getElementById('admStatusSumatif').value, token_sumatif:document.getElementById('admTokenSumatif').value.trim().toUpperCase(), durasi_sumatif:document.getElementById('admDurasiSumatif').value, acak_soal:document.getElementById('admAcakSoal').value, nama_sekolah:document.getElementById('admSekolah').value, nama_mapel:document.getElementById('admMapel').value, nama_guru:document.getElementById('admGuru').value, admin_pin:document.getElementById('admPin').value.trim(), pengumuman:document.getElementById('admPengumuman').value };
+  showLoader(); google.script.run.withSuccessHandler(()=>{ adminPinSession=p.admin_pin; hideLoader(); Swal.fire('Tersimpan','','success'); refreshAdminData(); }).withFailureHandler(onErr).adminUpdateSettings(adminPinSession, p);
+}
+function addMaterial() { showLoader(); google.script.run.withSuccessHandler(()=>{ hideLoader(); refreshAdminData(); }).withFailureHandler(onErr).adminAddMaterial(adminPinSession, { judul:document.getElementById('matJudul').value, kategori:document.getElementById('matKategori').value, tipe:document.getElementById('matTipe').value, link:document.getElementById('matLink').value, deskripsi:document.getElementById('matDesk').value }); }
+function addVideo() { showLoader(); google.script.run.withSuccessHandler(()=>{ hideLoader(); refreshAdminData(); }).withFailureHandler(onErr).adminAddVideo(adminPinSession, { judul:document.getElementById('vidAddJudul').value, topik:document.getElementById('vidAddTopik').value, durasi:document.getElementById('vidAddDurasi').value, youtubeUrl:document.getElementById('vidAddUrl').value, deskripsi:document.getElementById('vidAddDesk').value }); }
+function addAssignment() { showLoader(); google.script.run.withSuccessHandler(()=>{ hideLoader(); refreshAdminData(); }).withFailureHandler(onErr).adminAddAssignment(adminPinSession, { judul:document.getElementById('tgsJudul').value, deadline:document.getElementById('tgsDeadline').value, deskripsi:document.getElementById('tgsDesk').value }); }
+async function gradeSub(id) {
+  const { value: f } = await Swal.fire({ title:'Beri Nilai', html:'<input id="gn" type="number" class="swal2-input" placeholder="Nilai 0-100"><input id="gf" class="swal2-input" placeholder="Feedback">', showCancelButton:true, preConfirm:()=>({ nilai:document.getElementById('gn').value, feedback:document.getElementById('gf').value||'-' }) });
+  if (f && f.nilai!=='') { showLoader(); google.script.run.withSuccessHandler(()=>{ hideLoader(); refreshAdminData(); }).withFailureHandler(onErr).adminGradeSubmission(adminPinSession, id, f.nilai, f.feedback); }
+}
+function addQuestion() { showLoader(); google.script.run.withSuccessHandler(()=>{ hideLoader(); refreshAdminData(); }).withFailureHandler(onErr).adminAddQuestion(adminPinSession, { mode:document.getElementById('soalMode').value, topik:document.getElementById('soalTopik').value, kunci:document.getElementById('soalKunci').value, pertanyaan:document.getElementById('soalTanya').value, opsiA:document.getElementById('soalA').value, opsiB:document.getElementById('soalB').value, opsiC:document.getElementById('soalC').value, opsiD:document.getElementById('soalD').value, pembahasan:document.getElementById('soalBahasan').value }); }
+function delRow(k, id) { showLoader(); google.script.run.withSuccessHandler(()=>{ hideLoader(); refreshAdminData(); }).withFailureHandler(onErr).adminDeleteRow(adminPinSession, k, id); }
+function exportScoresCSV() {
+  let csv = 'Nama,Kelas,Mode,Skor,Benar,Total,PindahTab,Waktu\n';
+  adminData.scores.forEach(s => csv += `"${s.NamaSiswa}","${s.Kelas}","${s.Mode}",${s.Skor},${s.Benar},${s.TotalSoal},${s.PelanggaranTab},"${s.WaktuSelesai}"\n`);
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([csv],{type:'text/csv'})); a.download='Rekap_Nilai.csv'; a.click();
+}
+</script>
+</body>
+</html>
